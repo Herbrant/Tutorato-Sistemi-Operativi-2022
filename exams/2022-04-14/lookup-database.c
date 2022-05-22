@@ -53,11 +53,17 @@ void in_child(char id, int queue, char* path) {
             msg.key[strlen(msg.key)-1] = '\0';
 
         printf("IN%d: inviata query n.%d '%s'\n", id, query_number, msg.key);
-        msgsnd(queue, &msg, sizeof(query_msg) - sizeof(long), 0);
+        if (msgsnd(queue, &msg, sizeof(query_msg) - sizeof(long), 0) == -1) {
+            perror("msgsnd");
+            exit(1);
+        }
     }
 
     msg.done = 1;
-    msgsnd(queue, &msg, sizeof(query_msg) - sizeof(long), 0);
+    if (msgsnd(queue, &msg, sizeof(query_msg) - sizeof(long), 0) == -1){
+        perror("msgsnd");
+        exit(1);
+    }
 
     fclose(f);
     exit(0);
@@ -132,7 +138,11 @@ void db_child(int in_queue, int out_queue, char* path) {
     printf("DB: letti n.%d record da file\n", nlines);
 
     while (1) {
-        msgrcv(in_queue, &q_msg, sizeof(query_msg) - sizeof(long), DB_ID, 0);
+        if (msgrcv(in_queue, &q_msg, sizeof(query_msg) - sizeof(long), DB_ID, 0) == -1) {
+            perror("msgrcv");
+            exit(1);
+        }
+
         if (q_msg.done) {
             done_counter++;
             
@@ -155,12 +165,18 @@ void db_child(int in_queue, int out_queue, char* path) {
 
             o_msg.e = database[entry_index];
             o_msg.process = q_msg.id;
-            msgsnd(out_queue, &o_msg, sizeof(out_msg) - sizeof(long), 0);
+            if (msgsnd(out_queue, &o_msg, sizeof(out_msg) - sizeof(long), 0) == -1) {
+                perror("msgsnd");
+                exit(1);
+            }
         }
     }
 
     o_msg.process = -1;
-    msgsnd(out_queue, &o_msg, sizeof(out_msg) - sizeof(long), 0);
+    if (msgsnd(out_queue, &o_msg, sizeof(out_msg) - sizeof(long), 0) == -1) {
+        perror("msgsnd");
+        exit(1);
+    }
 
     free(database);
     exit(0);
@@ -172,7 +188,10 @@ void out_child(int queue) {
     out_msg msg;
 
     while (1) {
-        msgrcv(queue, &msg, sizeof(out_msg) - sizeof(long), OUT_ID, 0);
+        if (msgrcv(queue, &msg, sizeof(out_msg) - sizeof(long), OUT_ID, 0) == -1) {
+            perror("msgrcv");
+            exit(1);
+        }
         
         if (msg.process == IN1_ID) {
             record_in1++;
