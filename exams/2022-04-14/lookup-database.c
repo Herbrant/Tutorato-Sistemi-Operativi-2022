@@ -10,8 +10,6 @@
 #define BUFFER_SIZE 2048
 #define IN1_ID 1
 #define IN2_ID 2
-#define DB_ID 3
-#define OUT_ID 4
 
 typedef struct {
     long type;
@@ -29,13 +27,14 @@ typedef struct {
     long type;
     entry e;
     char process;
+    char done;
 }out_msg;
 
 void in_child(char id, int queue, char* path) {
     FILE* f;
     query_msg msg;
 
-    msg.type = DB_ID;
+    msg.type = 1;
     msg.done = 0;
     msg.id = id;
 
@@ -130,7 +129,8 @@ int search_entry_index(entry* e, unsigned size, char* key) {
 void db_child(int in_queue, int out_queue, char* path) {
     query_msg q_msg;
     out_msg o_msg;
-    o_msg.type = OUT_ID;
+    o_msg.type = 1;
+    o_msg.done = 0;
     char done_counter = 0;
     int entry_index;
     unsigned nlines = get_number_of_lines(path);
@@ -138,7 +138,7 @@ void db_child(int in_queue, int out_queue, char* path) {
     printf("DB: letti n.%d record da file\n", nlines);
 
     while (1) {
-        if (msgrcv(in_queue, &q_msg, sizeof(query_msg) - sizeof(long), DB_ID, 0) == -1) {
+        if (msgrcv(in_queue, &q_msg, sizeof(query_msg) - sizeof(long), 0, 0) == -1) {
             perror("msgrcv");
             exit(1);
         }
@@ -172,7 +172,7 @@ void db_child(int in_queue, int out_queue, char* path) {
         }
     }
 
-    o_msg.process = -1;
+    o_msg.done = 1;
     if (msgsnd(out_queue, &o_msg, sizeof(out_msg) - sizeof(long), 0) == -1) {
         perror("msgsnd");
         exit(1);
@@ -188,10 +188,13 @@ void out_child(int queue) {
     out_msg msg;
 
     while (1) {
-        if (msgrcv(queue, &msg, sizeof(out_msg) - sizeof(long), OUT_ID, 0) == -1) {
+        if (msgrcv(queue, &msg, sizeof(out_msg) - sizeof(long), 0, 0) == -1) {
             perror("msgrcv");
             exit(1);
         }
+
+        if (msg.done)
+            break;
         
         if (msg.process == IN1_ID) {
             record_in1++;
@@ -201,8 +204,6 @@ void out_child(int queue) {
             record_in2++;
             val2 += msg.e.value;
         }
-        else
-            break;
     }
 
     printf("OUT: ricevuti n.%d valori validi per IN1 con totale %d\n", record_in1, val1);
