@@ -243,7 +243,7 @@ void out_child(int queue) {
 
   printf("OUT: ricevuti n.%d valori validi di IN1 con totale %d\n", record_in1,
          val1);
-  printf("OUT: ricevuti n.%d valori validi di IN1 con totale %d\n", record_in2,
+  printf("OUT: ricevuti n.%d valori validi di IN2 con totale %d\n", record_in2,
          val2);
 
   exit(0);
