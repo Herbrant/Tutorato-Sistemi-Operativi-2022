@@ -211,7 +211,5 @@ int main(int argc, char **argv) {
         wait(NULL);
 
     shmctl(shm_des, IPC_RMID, NULL);
-
-    for (int i = 0; i < 4; i++)
-        semctl(sem_des, i, IPC_RMID);
+    semctl(sem_des, 0, IPC_RMID);
 }

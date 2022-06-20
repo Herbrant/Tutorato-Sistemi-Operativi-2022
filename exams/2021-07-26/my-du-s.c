@@ -213,7 +213,6 @@ int main(int argc, char **argv) {
         printf("%ld %s\n", blocks[i], argv[i + 1]);
 
     shmctl(shm_des, IPC_RMID, 0);
-    semctl(sem_des, S_SCANNER, IPC_RMID, 0);
-    semctl(sem_des, S_STATER, IPC_RMID, 0);
+    semctl(sem_des, 0, IPC_RMID, 0);
     msgctl(queue, IPC_RMID, 0);
 }
